@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "contracts/interfaces/IVara.sol";
 
-contract Vara is Initializable, IVara {
+contract Vara is IVara {
 
     string public constant name = "Vara";
     string public constant symbol = "VARA";
@@ -22,7 +21,7 @@ contract Vara is Initializable, IVara {
     event Transfer(address indexed from, address indexed to, uint value);
     event Approval(address indexed owner, address indexed spender, uint value);
 
-    function initialize() external initializer {
+    constructor() {
         minter = msg.sender;
     }
 

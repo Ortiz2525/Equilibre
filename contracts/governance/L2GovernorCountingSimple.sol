@@ -3,7 +3,6 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {L2Governor} from "contracts/governance/L2Governor.sol";
 
 /**
@@ -13,12 +12,7 @@ import {L2Governor} from "contracts/governance/L2Governor.sol";
  *
  * _Available since v4.3._
  */
-abstract contract L2GovernorCountingSimple is Initializable, L2Governor {
-    function __L2GovernorCountingSimple_init() internal onlyInitializing {
-    }
-
-    function __L2GovernorCountingSimple_init_unchained() internal onlyInitializing {
-    }
+abstract contract L2GovernorCountingSimple is L2Governor {
     /**
      * @dev Supported vote types. Matches Governor Bravo ordering.
      */

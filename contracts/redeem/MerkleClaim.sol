@@ -3,20 +3,19 @@ pragma solidity 0.8.13;
 
 /// ============ Imports ============
 
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import {IVara} from "contracts/interfaces/IVara.sol";
-import {MerkleProofUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol"; // OZ: MerkleProof
+import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol"; // OZ: MerkleProof
 
 /// @title MerkleClaim
 /// @notice Claims VARA for members of a merkle tree
 /// @author Modified from Merkle Airdrop Starter (https://github.com/Anish-Agnihotri/merkle-airdrop-starter/blob/master/contracts/src/MerkleClaimERC20.sol)
-contract MerkleClaim is Initializable {
+contract MerkleClaim {
     /// ============ Immutable storage ============
 
     /// @notice VARA token to claim
-    IVara public VARA;
+    IVara public immutable VARA;
     /// @notice ERC20-claimee inclusion root
-    bytes32 public merkleRoot;
+    bytes32 public immutable merkleRoot;
 
     /// ============ Mutable storage ============
 
@@ -28,10 +27,7 @@ contract MerkleClaim is Initializable {
     /// @notice Creates a new MerkleClaim contract
     /// @param _vara address
     /// @param _merkleRoot of claimees
-    function initialize(
-        address _vara, 
-        bytes32 _merkleRoot
-    ) external initializer {
+    constructor(address _vara, bytes32 _merkleRoot) {
         VARA = IVara(_vara);
         merkleRoot = _merkleRoot;
     }
@@ -57,7 +53,7 @@ contract MerkleClaim is Initializable {
 
         // Verify merkle proof, or revert if not in tree
         bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(msg.sender, amount))));
-        bool isValidLeaf = MerkleProofUpgradeable.verify(proof, merkleRoot, leaf);
+        bool isValidLeaf = MerkleProof.verify(proof, merkleRoot, leaf);
         require(isValidLeaf, "NOT_IN_MERKLE");
 
         // Set address to claimed

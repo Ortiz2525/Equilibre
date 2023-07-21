@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {WrappedExternalBribe} from 'contracts/WrappedExternalBribe.sol';
 
-contract WrappedExternalBribeFactory is Initializable {
-    address public voter;
+contract WrappedExternalBribeFactory {
+    address public immutable voter;
     mapping(address => address) public oldBribeToNew;
     address public last_bribe;
 
-    function initialize(address _voter) external initializer {
+    constructor(address _voter) {
         voter = _voter;
     }
 

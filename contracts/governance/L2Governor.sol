@@ -3,18 +3,18 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721ReceiverUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155ReceiverUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/structs/DoubleEndedQueueUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/TimersUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/governance/IGovernorUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "@openzeppelin/contracts/utils/structs/DoubleEndedQueue.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/utils/Timers.sol";
+import "@openzeppelin/contracts/governance/IGovernor.sol";
+
 /**
  * @author Modified from RollCall (https://github.com/withtally/rollcall/blob/main/src/standards/L2Governor.sol)
  *
@@ -28,18 +28,18 @@ import "@openzeppelin/contracts-upgradeable/governance/IGovernorUpgradeable.sol"
  *
  * _Available since v4.3._
  */
-abstract contract L2Governor is Initializable, ContextUpgradeable, ERC165Upgradeable, EIP712Upgradeable, IGovernorUpgradeable, IERC721ReceiverUpgradeable, IERC1155ReceiverUpgradeable {
-    using DoubleEndedQueueUpgradeable for DoubleEndedQueueUpgradeable.Bytes32Deque;
-    using SafeCastUpgradeable for uint256;
-    using TimersUpgradeable for TimersUpgradeable.Timestamp;
+abstract contract L2Governor is Context, ERC165, EIP712, IGovernor, IERC721Receiver, IERC1155Receiver {
+    using DoubleEndedQueue for DoubleEndedQueue.Bytes32Deque;
+    using SafeCast for uint256;
+    using Timers for Timers.Timestamp;
 
     bytes32 public constant BALLOT_TYPEHASH = keccak256("Ballot(uint256 proposalId,uint8 support)");
     bytes32 public constant EXTENDED_BALLOT_TYPEHASH =
         keccak256("ExtendedBallot(uint256 proposalId,uint8 support,string reason,bytes params)");
 
     struct ProposalCore {
-        TimersUpgradeable.Timestamp voteStart;
-        TimersUpgradeable.Timestamp voteEnd;
+        Timers.Timestamp voteStart;
+        Timers.Timestamp voteEnd;
         bool executed;
         bool canceled;
     }
@@ -52,7 +52,7 @@ abstract contract L2Governor is Initializable, ContextUpgradeable, ERC165Upgrade
     // {onlyGovernance} modifier needs to be whitelisted in this queue. Whitelisting is set in {_beforeExecute},
     // consumed by the {onlyGovernance} modifier and eventually reset in {_afterExecute}. This ensures that the
     // execution of {onlyGovernance} protected calls can only be achieved through successful proposals.
-    DoubleEndedQueueUpgradeable.Bytes32Deque private _governanceCall;
+    DoubleEndedQueue.Bytes32Deque private _governanceCall;
 
     /**
      * @dev Restricts a function so it can only be executed through governance proposals. For example, governance
@@ -77,12 +77,7 @@ abstract contract L2Governor is Initializable, ContextUpgradeable, ERC165Upgrade
     /**
      * @dev Sets the value for {name} and {version}
      */
-    function __L2Governor_init(string memory name_) internal onlyInitializing {
-        __EIP712_init_unchained(name_, version());
-        __L2Governor_init_unchained(name_);
-    }
-
-    function __L2Governor_init_unchained(string memory name_) internal onlyInitializing {
+    constructor(string memory name_) EIP712(name_, version()) {
         _name = name_;
     }
 
@@ -96,17 +91,17 @@ abstract contract L2Governor is Initializable, ContextUpgradeable, ERC165Upgrade
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165Upgradeable, ERC165Upgradeable) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC165) returns (bool) {
         // In addition to the current interfaceId, also support previous version of the interfaceId that did not
         // include the castVoteWithReasonAndParams() function as standard
         return
             interfaceId ==
-            (type(IGovernorUpgradeable).interfaceId ^
+            (type(IGovernor).interfaceId ^
                 this.castVoteWithReasonAndParams.selector ^
                 this.castVoteWithReasonAndParamsBySig.selector ^
                 this.getVotesWithParams.selector) ||
-            interfaceId == type(IGovernorUpgradeable).interfaceId ||
-            interfaceId == type(IERC1155ReceiverUpgradeable).interfaceId ||
+            interfaceId == type(IGovernor).interfaceId ||
+            interfaceId == type(IERC1155Receiver).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -330,7 +325,7 @@ abstract contract L2Governor is Initializable, ContextUpgradeable, ERC165Upgrade
         string memory errorMessage = "Governor: call reverted without message";
         for (uint256 i = 0; i < targets.length; ++i) {
             (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
-            AddressUpgradeable.verifyCallResult(success, returndata, errorMessage);
+            Address.verifyCallResult(success, returndata, errorMessage);
         }
     }
 
@@ -457,7 +452,7 @@ abstract contract L2Governor is Initializable, ContextUpgradeable, ERC165Upgrade
         bytes32 r,
         bytes32 s
     ) public virtual override returns (uint256) {
-        address voter = ECDSAUpgradeable.recover(
+        address voter = ECDSA.recover(
             _hashTypedDataV4(keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support))),
             v,
             r,
@@ -478,7 +473,7 @@ abstract contract L2Governor is Initializable, ContextUpgradeable, ERC165Upgrade
         bytes32 r,
         bytes32 s
     ) public virtual override returns (uint256) {
-        address voter = ECDSAUpgradeable.recover(
+        address voter = ECDSA.recover(
             _hashTypedDataV4(
                 keccak256(
                     abi.encode(
@@ -552,7 +547,7 @@ abstract contract L2Governor is Initializable, ContextUpgradeable, ERC165Upgrade
         uint256 value,
         bytes calldata data
     ) external virtual onlyGovernance {
-        AddressUpgradeable.functionCallWithValue(target, data, value);
+        Address.functionCallWithValue(target, data, value);
     }
 
     /**

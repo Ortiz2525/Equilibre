@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.13;
 
-import '@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol';
 import 'contracts/libraries/Math.sol';
 import 'contracts/interfaces/IERC20.sol';
 import 'contracts/interfaces/IRewardsDistributor.sol';
@@ -15,7 +14,7 @@ import 'contracts/interfaces/IVotingEscrow.sol';
 
 */
 
-contract RewardsDistributor is Initializable, IRewardsDistributor {
+contract RewardsDistributor is IRewardsDistributor {
 
     event CheckpointToken(
         uint time,
@@ -47,7 +46,7 @@ contract RewardsDistributor is Initializable, IRewardsDistributor {
 
     address public depositor;
 
-    function initialize(address _voting_escrow) external initializer {
+    constructor(address _voting_escrow) {
         uint _t = block.timestamp / WEEK * WEEK;
         start_time = _t;
         last_token_time = _t;
